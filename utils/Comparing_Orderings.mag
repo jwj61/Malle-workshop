@@ -1,0 +1,41 @@
+/*
+MAGMA: This is a function for creating comparisions between two discriminant orderings of G
+
+It takes as input a permutation group G, 
+a subgroup S2 of G, and an optional parameter T giving a normal subgroup of G.
+If T is not provided, it defaults to the trivial subgroup.
+
+It gives two numbers e and E as outputs which satisfy
+ - |disc_{G/S2}|^e << |q_* disc_{G/S1}| << |disc_{G/S2}|^E
+where q_* disc_{G/S_1} is the pushforward discriminant along the quotient map
+q:G->T. if T is the identity then this is the usual disc_{G/S_1}
+*/
+
+Swap := function(G,S2 : T:=sub<G|1>)
+	if #G eq 1 then
+		return 1,1;
+	end if;
+    
+    if #T eq 1 then
+		f2,G2:=CosetAction(G,S2);
+		e:=Minimum([ind(c[3])/ind(f2((c[3]))) : c in ConjugacyClasses(G) | not c[3] in T]);
+		E:=Maximum([ind(c[3])/ind(f2((c[3]))) : c in ConjugacyClasses(G) | not c[3] in T]);
+		
+		return e,E;
+    end if;
+    
+    // Check for imprimitive kernel
+    
+    Orb := Orbits(T)[1];
+    blockmap,GquoT,OrbKer := BlocksAction(G,Orb);
+    if OrbKer eq T and IsConjugate(GquoT, blockmap(S2), Stabilizer(GquoT,1)) then
+		return  #Orb,#Orb;
+    end if;
+    
+	GquoT,q:=quo<G|T>;
+	f2,G2:=CosetAction(GquoT,q(S2));
+	e:=Minimum([ind(c[3])/ind(f2(q(c[3]))) : c in ConjugacyClasses(G) | not c[3] in T]);
+	E:=Maximum([ind(c[3])/ind(f2(q(c[3]))) : c in ConjugacyClasses(G) | not c[3] in T]);
+
+	return e,E;
+end function;

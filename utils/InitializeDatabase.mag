@@ -1,0 +1,82 @@
+/*
+	This file contains both the GroupCountingInfo record, and the InitalizeDatabase function.
+	
+	The function InitializeDatabase takes in one argument (maxDegree).
+	It outputs an array of GroupCountingInfo records, with one entry per group of degree up to maxDegree.
+	It also seeds the array with basic information about the group, including preliminary bounds.
+*/
+
+GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt >;
+
+
+InitializeDatabase := function(maxDegree)       
+    Database := [];
+             
+    Append(~Database, rec< GroupCountingInfo | degree:=1, label:=1, order:=1, malleindex:=0, bound:=0.0, conjecture:=true, isnilpotent:=true, issolvable:=true, isconcentrated:=false>);
+
+    for n:=2 to maxDegree do
+        TGP := TransitiveGroupProcess(n);
+        
+        while not IsEmpty(TGP) do
+			
+			G:=Current(TGP);
+			
+			// Seed with basic info about G
+			G_rec := rec< GroupCountingInfo | degree:=n, label:=TransitiveGroupIdentification(G), malleindex:=MinIndex(G), order:=#G>;
+			
+			if IsAbelian(G) then
+			
+				// Strong Malle is known for abelian groups
+			
+				G_rec`bound := 1.0/G_rec`malleindex;
+				G_rec`conjecture := true;
+				G_rec`isnilpotent := true;
+				G_rec`issolvable := true;
+				if IsPrime(#G) then
+					G_rec`isconcentrated := true;
+				else
+					G_rec`isconcentrated := false;
+				end if;		
+				Append(~Database, G_rec);
+			elif IsNilpotent(G) then
+				G_rec`isnilpotent := true;
+				G_rec`issolvable := true;
+				
+				G_rec`bound := 1.0/G_rec`malleindex;
+					// Weak Malle is known for nilpotent groups
+				
+				N := MinIndexSubgroup(G);
+				if IsAbelian(N) then
+					G_rec`conjecture := true;
+					G_rec`isconcentrated := true;
+				elif N ne G then
+					G_rec`conjecture := false;
+					G_rec`isconcentrated := true;
+				else
+					G_rec`conjecture := false;
+						// Strong Malle not a priori known in general
+					G_rec`isconcentrated := false;
+				end if;
+				Append(~Database, G_rec);
+			else
+				G_rec`isnilpotent := false;
+				G_rec`issolvable := IsSolvable(G);
+				
+				G_rec`bound := InvariantTheoryBound(G)*1.0;
+				
+				if #G eq n and n ge 5 then
+					G_rec`bound := Minimum(G_rec`bound, 3/8);
+						// A bound of 3/8 is known for groups in the regular representation
+				end if;
+				
+				G_rec`conjecture := false;
+				G_rec`isconcentrated := (MinIndexSubgroup(G) ne G);
+				
+				Append(~Database, G_rec);
+			end if;
+            
+            Advance(~TGP);
+        end while;
+    end for;
+	return Database;
+end function;
