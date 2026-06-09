@@ -1,0 +1,66 @@
+/*
+MAGMA: gives the initial upper bound for |H^1_ur(K,T(\pi))| via Lemma 3.1.
+
+This code is currently restricted to considering only bound of the form
+ - |disc_{G/T}|^t
+for a fixed transitive representation of G/T.
+
+The inputs are:
+ - G a transitive permutation group
+ - T an abelian normal subgroup of G
+
+The output is a number "bound" such that
+ - |H^1_{ur}(K,T(pi))| << |disc(F/K)|^{bound+\epsilon}
+for F the field fixed by \ker \pi.
+*/
+
+function PD_H1ur_Bound(G,T)
+    HZG:=Hypercenter(G);
+    GquoHZG,qHZ:=quo<G|HZG>;
+    Triv:=qHZ(HZG);
+
+    //The inductive class group bounds allow us to reduce to
+    //T / (T \cap HZG) when calculating the size of th class group
+    //so it suffice to work with the subgroup
+    TquoHZG:=qHZ(T);
+
+    //We will determine the number of generators for the Pontryagin dual
+    //We know that d(M^\vee)=d(Soc(M)^\vee)=d(Soc(M)), so we consider
+    Soc:=Socle(TquoHZG);
+
+    //The value d will be an upper bound for the numebr of generators
+    d:=0;
+
+    //We proceed one Sylow subgroup of Soc at a time.
+    //By Soc semisimple and the Chinese remainder theorem, we know
+    //d(Soc^\vee) is bounded above by the largest multiplicity of a simple factor,
+    //so that we can check the multiplicity of each simple factor over each prime individually
+    prime_factors := [p : p in [1..#Soc] | IsPrime(p) and #Soc mod p eq 0];
+    for p in prime_factors do
+        Sp:=Sylow(Soc,p);
+
+        //Gives M the G-Module structure
+        M:= GModule(GquoHZG,Sp,Triv);
+        //technicall ScT is the socle as a group, which may be larger than the socle as a module
+        //so we take the socle again
+        SocM:=Socle(M);
+
+        //Should no longer be necessary
+        //Gives Mvee as a G-module
+        //Fp:=TrivialModule(GquoHZG,FiniteField(p));
+        //Mvee:=HomMod(M,Fp);
+
+        //The Constituents() command returns a list of composition factors of
+        //the module, and a corresponding list of multiplicities
+        CompositionFactors,Multiplicity:=Constituents(SocM);
+
+        //The number of generators of SocM is the maximum of the multiplicities
+        //of composition factors by SocM semisimple and the Chinese Remainder Theorem
+        for mult in Multiplicity do
+            d:=Max(d,mult);
+        end for;
+    end for;
+    
+    //The bound is |Disc|^{d(T^\vee)/2+\epsilon}
+    return d/2;
+end function;

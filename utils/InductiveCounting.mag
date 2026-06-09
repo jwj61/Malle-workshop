@@ -1,0 +1,207 @@
+/*
+MAGMA: inductive counting (to be included after ConjectureIsKnown.mag).
+
+Now, we induct through the Database improving the known upper bounds
+through Theorems 1.9 and 1.10 as we go. At any point that these theorems
+prove Conjecture 1, we update the corresponding table.
+*/
+
+/*
+We may want to repeat this process more that once. I tested degree 8,
+and found no benefit to repeating. But perhaps there will be a benefit for larger
+degrees.
+*/
+
+
+
+
+
+for rp:=1 to number_of_repeats do
+
+	print "Working on pass",rp,"of",number_of_repeats;
+	
+	n_old := 0;
+	decile := 0;
+
+	for index in [2..#Database] do
+		G_rec := Database[index];
+		n:=G_rec`degree;
+		d:=G_rec`label;
+				
+		if n gt n_old then
+			print "....Considering groups of degree",n;
+			n_old := n;
+			decile := 0;
+		end if;
+		
+		if Floor(10*d/NumberOfTransitiveGroups(n)) gt decile then
+			decile := Floor(10*d/NumberOfTransitiveGroups(n));
+			print "........",decile*10,"%";
+		end if;
+		
+		nTd:=TransitiveGroup(n,d);
+		a:=G_rec`malleindex;
+
+
+		/*
+			If we do not already know weak Malle, we update any upper bounds by comparing with other orderings.
+		*/
+		if G_rec`bound gt 1/a then
+			for S_rec in Subgroups(nTd: IndexLimit := MaxDegree) do
+				S:=S_rec`subgroup;
+				if #Core(nTd,S) eq 1 then
+					e:=Swap(nTd,S);
+					D,N:=TransitiveGroupIdentification(CosetImage(nTd,S));
+					Database[index]`bound:=Min(Database[index]`bound,Database[FirstIndex[N]+D-1]`bound/e);
+				end if;
+			end for;
+		end if;
+
+		/*
+			We now apply Theorem 1.10 to any group for which Conjecture 1 has not
+			already been proven. We have already included the best possible results
+			for nilpotent groups, so we can skip these cases as well.
+		
+			*****
+			*****
+			NOTE
+			*****
+			*****
+				To avoid running into memory issues, we are doing this only for solvable groups.
+		*/
+		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) and IsSolvable(nTd) then
+
+			/*
+			We iterate over all nontrivial abelian normal subgroups of nTd as the T group.
+			*/
+			for T_rec in NormalSubgroups(nTd) do
+				T:=T_rec`subgroup;
+				if (Database[index]`conjecture eq false) and IsAbelian(T) and #T ne 1 then
+					// Check if T is an imprimitive kernel.
+					
+					try					
+						Orb := Orbits(T)[1];
+											
+						q,nTdQuotientByT,OrbKer := BlocksAction(nTd,Orb);
+						
+						if OrbKer ne T then
+							nTdQuotientByT,q:=quo<nTd|T>;
+						end if;
+
+						/*
+						If nTd / T is nilpotent or S3, we can count by the pushforward discriminant
+						directly. This is calculated with
+						- beta = 1/a(G-T)
+						and t being given by bounding |H^1_{ur}(K,T(pi))| above by a power of
+						|disc_{nTd/S}| for soem core free subgroup S, which is then bounded above by
+						a power of the pushforward discriminant.
+						*/
+						if IsNilpotent(nTdQuotientByT) or IsIsomorphic(nTdQuotientByT,TransitiveGroup(3,2)) then
+							//Pushforward discriminant calculation
+							beta := 1/Minimum([n - #Orbits(sub<nTd|c[3]>) : c in ConjugacyClasses(nTd) | not c[3] in T]);
+							t:=PD_H1ur_Bound(nTd,T);
+							
+							if beta+t lt 1/a then
+								Database[index]`bound:=1.0/a;
+								Database[index]`conjecture:=true;
+								//print n,d,"winner";
+							else
+								Database[index]`bound:=Min(Database[index]`bound,beta+t);
+								//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
+							end if;
+						end if;
+				
+
+						/*
+						Otherwise, we need to handle the pushforward ordering, as it may not
+						agree with a discriminant. We iterate through the possible discriminants
+						corresponding to a representation of G/T appearing in Database and
+						determine the largest exponent e such that
+						 - disc_{G/T}^e \le q_* disc_G
+						This implies we can take beta = beta_{G/T} / e, where beta_{G/T} comes
+						from our table satisfying
+						- N(K,G/T;X) << X^{beta_{G/T}+\epsilon},
+						with G/T a transitive representation of the quotient group.
+						*/
+						
+						for S_rec in Subgroups(nTdQuotientByT : IndexLimit := MaxDegree) do
+							S:=S_rec`subgroup;
+							if (Database[index]`conjecture eq false) and (#Core(nTdQuotientByT,S) eq 1) then
+
+								//QuotRep defined below is a transitive rep of nTd / T,
+								//which agrees with NTD in the Database.
+								f,QuotRep:=CosetAction(nTdQuotientByT,S);
+								D,N:=TransitiveGroupIdentification(QuotRep);
+
+								Spullback:=Inverse(q)(S);
+
+								//We call Swap to determine the maximal exponent e
+								//with |disc_{nTd/S}|^e << |q_* disc_{nTd}|.
+								e:=Swap(nTd,Spullback : T:=T);
+
+								//This gives us beta from Theorem 1.10
+								beta:=Database[FirstIndex[N]+D-1]`bound / e;
+								
+								/*
+								Next, we determine t by comparing |H^1_{ur}(K,T)|
+								to the discriminant associated to the representation NTD.
+								This is done by calling the function PD_H1ur_Bound.
+								*/
+								t:=PD_H1ur_Bound(nTd,T) / e;
+								
+								/*
+								We now apply the conclusion of Theorem 1.10
+								*/
+								if beta+t lt 1/a then
+									Database[index]`bound:=1.0/a;
+									Database[index]`conjecture:=true;
+									//print n,d,"winner";
+								else
+									Database[index]`bound:=Min(Database[index]`bound,beta+t);
+									//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
+								end if;
+							end if;
+						end for;
+					catch e
+						// Hard coding in some basic case detection
+						
+						print "Had an issue with group ",n,"T",d;
+						
+						// If T is central, then G/T is nilpotent iff G is
+						if IsCentral(nTd,T) and IsNilpotent(nTd) then
+							beta := 1/Minimum([n - #Orbits(sub<nTd|c[3]>) : c in ConjugacyClasses(nTd) | not c[3] in T]);
+							t:=PD_H1ur_Bound(nTd,T);
+							
+							if beta+t lt 1/a then
+								Database[index]`bound:=1/a;
+								Database[index]`bound:=true;
+								//print n,d,"winner";
+							else
+								Database[index]`bound:=Min(Database[index]`bound,beta+t);
+								//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
+							end if;
+						end if;
+						
+						
+						
+					end try;
+
+				end if;
+			end for;
+		end if;
+		
+		/*
+		If the group S_3 wr G is included in Database, we apply Theorem 1.9.
+		*/
+		
+		if 3*n le MaxDegree then
+			S3wrnTd:=WreathProduct(TransitiveGroup(3,2),nTd);
+			D,N:=TransitiveGroupIdentification(S3wrnTd);
+			new_bound,check_conj:=checkS3wreathG(n,Database[index]`bound);
+			Database[FirstIndex[N]+D-1]`bound := Min(Database[FirstIndex[N]+D-1]`bound,new_bound);
+			Database[FirstIndex[N]+D-1]`conjecture := Database[FirstIndex[N]+D-1]`conjecture or check_conj;
+		end if;
+
+	end for;
+
+end for;

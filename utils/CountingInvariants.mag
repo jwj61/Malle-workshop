@@ -1,0 +1,44 @@
+/*
+	The index function takes as input g an element of a permutation group G
+	of degree n, and outputs ind(g) = n - #{orbits of g}.
+*/
+
+ind:=function(g)
+    C:=CycleStructure(g);
+    k:=0;n:=0;
+    for i:=1 to #C do
+       k:=k+C[i][2];
+       n:=n+C[i][2]*C[i][1];
+    end for;
+    return n-k;
+end function;
+
+
+/*
+The MinIndex Function takes as input a transitive group G, and gives as
+output a(G)
+ - a(G) = min ind(g) for g \in G - {1}
+*/
+
+MinIndex:=function(G)
+	if #G eq 1 then
+		return 1;
+	end if;
+	
+	a := Minimum([ind(c[3]) : c in ConjugacyClasses(G) | c[1] ne 1]);
+	return a;
+end function;
+
+MinIndexSubgroup:=function(G)
+    if #G eq 1 then
+		return G;
+    else
+		C := ConjugacyClasses(G);
+		inds := [ind(c[3]) : c in C | c[1] ne 1];
+		
+		a:=Minimum(inds);
+		A:=[c[3] : c in C | ind(c[3]) eq a];
+		
+		return ncl<G|A>;
+    end if;
+end function;

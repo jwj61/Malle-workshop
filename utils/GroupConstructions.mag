@@ -1,0 +1,41 @@
+/*
+MAGMA: code for constructing different kinds of groups.
+*/
+
+/*
+GenWreathProduct takes as input two permutation groups T and B, along with C
+a subgroup of B. It gives as output the generalized wreath product
+ - T \wr_\phi B
+as a subgroup of the wreath product T \wr B, where \phi:B\to S_r is the homomorphism
+induced by the action of B on B/C Stab_B(1), with r = [B:C Stab_B(1)].
+*/
+GenWreathProduct:=function(T,B,C)
+    Stab_B:=Stabilizer(B,1);
+    CH:=Transversal(C,Stab_B);
+    TwrB,ListOfT,SectionFromB,QuotientToB:=WreathProduct(T,B);
+    FirstT:=ListOfT[1];
+    TrIntersectGWP:=[];
+    for t in T do
+        sgm:=FirstT(t);
+        sg:=Id(TwrB);
+        for c in CH do
+            s:=SectionFromB(c);
+            sg:=sg*sgm^(s);
+        end for;
+        Include(~TrIntersectGWP, sg);
+    end for;
+    GWP:=sub<TwrB|SectionFromB(B),TrIntersectGWP>;
+    return GWP;
+end function;
+
+
+/*
+Constructs the transitive representation of a direct product of two
+transitive groups.
+*/
+TransitiveDirectProduct:=function(G,H)
+    imprimGxH:=DirectProduct(G,H);
+    Stab:=DirectProduct(Stabilizer(G,1),Stabilizer(H,1));
+    GxH:=Codomain(CosetAction(imprimGxH,Stab));
+    return GxH;
+end function;

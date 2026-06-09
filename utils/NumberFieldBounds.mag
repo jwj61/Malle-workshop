@@ -1,0 +1,284 @@
+/* 
+	This file implements the following:
+		*: The Schmidt bound, in its form that accounts for imprimitivity
+		*: Bhargava's improvement to the Schmidt bound for primitive groups
+		*: Lemke Oliver's bounds based on invariant theory
+*/
+
+function SchmidtBound(G : Bhargava:=true)
+
+	// This functions implements the Schmidt bound, together with Bhargava's improvement
+	// Bhargava's improvement takes some care to implement inductively, so it should be used only for primitive groups at this time
+	
+	n:=Degree(G);
+	if IsPrimitive(G) and Bhargava eq true then
+		indG := MinIndex(G);
+		a:=(n+2)/4-1+1/indG;
+		return a,Maximum(a*n+n/4-n/indG,(n^2-1)/2);
+	end if;
+	if IsPrimitive(G) and Bhargava eq false then
+		return (n+2)/4,(n+2)/4*n-3*n/4;
+	end if;
+	
+	// We may assume G is imprimitive here.  This means that at least one minimal normal subgroup will be intransitive.
+	
+	MN := MinimalNormalSubgroups(G);
+	best := (n+2)/4;
+	
+	for N in MN do
+		Orb := Orbits(N)[1];
+		if #Orb ne Degree(G) then
+			top := (#Orb+2)/4;
+			n1:=#Orb;
+			n2:=n div n1;
+			bot := SchmidtBound(BlocksImage(G,Orb) : Bhargava:=false);
+			if Maximum(top,bot) le best then
+				if Maximum(top,bot) lt best then
+					best := Minimum([best,Maximum(top,bot)]);	
+				end if;
+			end if;
+		end if;
+	end for;
+	
+	return best;
+end function;
+
+
+function FindIndependentInvariants(G,d : debug:=false, trials:=10, height:=10)
+	// Attempts to find a set of n algebraically independent invariants in degrees up to d
+	// Will return the tuple of degrees of the invariants
+	// These invariants are (probably) minimal, but are not proved to be so here
+	// For an attempt at a proof, try FindMinimalInvariants
+	
+	n := Degree(G);
+	if debug eq true then
+		print "Computing invariant ring.";
+		print "Current memory usage:", Memory();
+	end if;
+	ROI := InvariantRing(G,Rationals());
+	if debug eq true then
+		print "Computing invariant polynomials.";
+		print "Current memory usage:", Memory();
+	end if;
+	Polys := InvariantsOfDegree(ROI,1);
+	for dd in [2..d] do
+		if debug eq true then
+			print "Computed d=",dd-1;
+			print "Current memory usage:", Memory();
+		end if;
+		Polys := Polys cat InvariantsOfDegree(ROI,dd);
+	end for;
+	
+	mincorank:=n;
+	
+	if debug eq true then
+		print "Computed invariant polynomials.";
+		print "Current memory usage:", Memory();
+	end if;
+	
+	for trial in [1..trials] do
+		evalvec := [Random(-height,height) : j in [1..n]];
+		M:=[];
+		
+		if debug eq true then
+			print "Starting trial",trial;
+			print "Current memory usage:", Memory();
+		end if;
+		
+		if debug eq true then
+			print "Computing evaluated derivatives";
+			print "Current memory usage:", Memory();
+		end if;
+		
+		for f in Polys do
+			m := [Evaluate(Derivative(f,j),evalvec) : j in [1..n]];
+			M:=Append(M,m);
+		end for;
+		
+		if debug eq true then
+			print "Computing corank";
+			print "Current memory usage:", Memory();
+		end if;
+		
+		cork := n-Rank(Matrix(M));
+		
+		if debug eq true then
+			print "Computed corank";
+			print "Current memory usage:", Memory();
+		end if;
+		
+		if cork eq 0 then
+			E := EchelonForm(Transpose(Matrix(M)));
+			degs:=[];
+			for i in [1..n] do
+				j:=1;
+				while E[i][j] eq 0 do
+					j:=j+1;
+				end while;
+				Append(~degs,Degree(Polys[j]));
+			end for;
+			return degs,true,0;
+		else
+			mincorank:=Min(mincorank,cork);
+		end if;
+	end for;
+	return [],false,mincorank;
+end function;
+
+function GuessInvariantDegree(G)
+	// Attempts to "guess" the invariant degrees of a group G by using its Molien series
+	// This is equivalent to putting a lower bound on the invariant degrees
+	
+	n := Degree(G);
+	codim := n;
+	inv_deg := [];
+	d:=1;
+	MolG:=MolienSeries(G);
+	while codim gt 0 do
+		R:=PowerSeriesRing(Integers() : Precision:=d+1);
+		MG:=R!MolG;
+		FI := R!1;
+		if #inv_deg gt 0 then 
+			FI:=&*[1/(1-R.1^i) : i in inv_deg];
+		end if;
+		num_new := Minimum(Coefficient(MG-FI,d),codim);
+		codim := codim - num_new;
+		for i in [1..num_new] do
+			Append(~inv_deg,d);
+		end for;
+		d:=d+1;
+	end while;
+	return inv_deg;
+end function;
+
+function FindMinimalInvariants(G : output:=true, trials:=10, height:=100)
+	// Computes a lower bound on the degrees of an independent set of invariants using the Molien series,
+	// then attempts to see if there is a set of independent invariants matching that degree bound.
+	// This will return either : 	[tuple of degrees], true
+	//					 			[], false
+	// depending on whether these this strategy works.
+	// It works suspiciously well for primitive groups.
+	// The first failure is 8T42, though earlier groups do sometimes fail
+	// (There is a probabilistic element to this computation.)
+	
+	if output then
+		print "Computing a lower bound on the invariant degrees using a Molien series.";
+	end if;
+	
+	InvLowerBound := GuessInvariantDegree(G);
+	deg := Maximum(InvLowerBound);
+	
+	if output then
+		print "....Done.";
+		print "....Maximum degree is",deg;
+	end if;
+	
+	if output then
+		print "Trying to find independent invariants with degree bounded by",deg;
+	end if;
+	InvUpperBound := FindIndependentInvariants(G,deg : trials:=trials, height:=height);
+	if output then
+		print "....Done.";
+	end if;
+	
+	if InvLowerBound eq InvUpperBound then
+		if output then
+			print "....Degrees match.";
+		end if;
+		return InvLowerBound,true;
+	else
+		if output then
+			print "....Degrees *do not* match.";
+		end if;
+		return [],false;
+	end if;
+	
+	return [],false;
+	
+end function;
+
+function InvariantTheoryBound( G : imprimitive:=false)
+
+	if IsPrimitive(G) eq false and imprimitive eq false then
+		return SchmidtBound(G);
+	end if;
+	
+	n := Degree(G);
+	indG := MinIndex(G);
+	
+	Invs := [];
+	
+	// Hard coding the Mathieu invariants
+	
+	if n eq 11 and PrimitiveGroupIdentification(G) eq 6 then
+		// M11
+		Invs := [1,2,3,4,5,5,6,6,7,8];
+	end if;
+	if n eq 12 and PrimitiveGroupIdentification(G) eq 4 then
+		// M12
+		Invs := [1,2,3,4,5,6,6,7,8,8,9];
+	end if;
+	if n eq 22 and PrimitiveGroupIdentification(G) eq 1 then
+		// M22
+		Invs := [1,2,3,4,4,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7];
+	end if;
+	if n eq 22 and PrimitiveGroupIdentification(G) eq 2 then
+		// M22.2
+		Invs := [1,2,3,4,4,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,7];
+	end if;
+	if n eq 23 and PrimitiveGroupIdentification(G) eq 5 then
+		// M23
+		Invs := [1,2,3,4,5,5,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,8,9];
+	end if;
+	if n eq 24 and PrimitiveGroupIdentification(G) eq 3 then
+		// M24
+		Invs := [1,2,3,4,5,6,6,7,7,8,8,8,8,9,9,9,9,9,10,10,10,10,10,10];
+	end if;
+	
+	// Hard coding An and Sn
+	
+	if #G ge Factorial(n)/2 then
+		Invs := [i : i in [1..n]];
+	end if;
+	
+	if #Invs eq 0 then	
+		Invs := FindMinimalInvariants(G : output:=false);
+	end if;
+	
+	sch := SchmidtBound(G);
+	
+	if #Invs gt 0 then
+		uniform := &+Invs/n - 1/2;
+		
+		betterbd := 0;
+
+		for d in [1..Maximum(Invs)] do
+			numd := #[i : i in Invs | i eq d];
+			if d ge n/indG or numd eq 1 then
+				betterbd := betterbd + numd*d;
+			else
+				betterbd := betterbd + numd*d + (numd-1)*(n/indG - d);
+			end if;
+		end for;
+
+		betterbd := betterbd/n - 3/2 + 1/indG;
+
+		/*if uniform lt betterbd then
+			return uniform;
+		end if;
+		if betterbd lt uniform then
+			return betterbd;
+		end if;
+		if uniform eq betterbd then
+			return uniform;
+		end if;*/
+		
+		minexp,minind := Minimum([sch,uniform,betterbd]);
+		return minexp;
+		
+	else
+		return sch;
+	end if;
+end function;
+
+
