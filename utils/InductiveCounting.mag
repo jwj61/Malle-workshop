@@ -53,7 +53,9 @@ while QQ`passnum eq rp do
 
 
 		/*
-			If we do not already know weak Malle, we update any upper bounds by comparing with other orderings.
+			If we do not already know weak Malle, we update any upper bounds by comparing with other permutation
+			representations of the same group. (We don't bother looking for upper bounds that would violate
+			Weak Malle.)
 		*/
 		if G_rec`bound gt 1/a then
 			for S_rec in Subgroups(nTd: IndexLimit := MaxDegree) do
@@ -74,12 +76,15 @@ while QQ`passnum eq rp do
 			already been proven. We have already included the best possible results
 			for nilpotent groups, so we can skip these cases as well.
 		
-			*****
-			*****
-			NOTE
-			*****
-			*****
-				To avoid running into memory issues, we are doing this only for solvable groups.
+			For the below, if the conjecture is true, we don't need to apply Theorem 1.10.
+			If the group is nilpotent, we don't expect to get a new asymptotic beyond 
+			what is given by the initialization that uses Corollary 1.2 of ALLOW, and we
+			already have the best upper bound we would expect, so it would seem wasteful
+			to run this (even if we haven't proven it couldn't change the database).
+			Similarly, if we are in another situation where we have the Weak Malle upper 
+			bound, and the MinIndexSubgroup is not abelian, we would be shocked to
+			get an asymptotic from this, so we don't try in order to be more efficient.
+		
 		*/
 		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) then
 
@@ -212,7 +217,7 @@ while QQ`passnum eq rp do
 		end if;
 		
 		/*
-		If the group S_3 wr G is included in Database, we apply Theorem 1.9.
+		If the group S_3 wr G is included in Database, we apply Theorem 1.9 to it.
 		*/
 		
 		if 3*n le MaxDegree then
