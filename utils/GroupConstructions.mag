@@ -68,7 +68,8 @@ SmallestTransitivePermutationRepresentation:=function(G)
             error if rep_degree ne degree,
                 "Coset-action degree disagrees with transitive-group identification";
 
-            if degree lt best_degree or label lt best_label then
+            if degree lt best_degree or
+                    (degree eq best_degree and label lt best_label) then
                 best_degree := degree;
                 best_label := label;
                 best_rep := P;
