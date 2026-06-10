@@ -17,7 +17,9 @@ degrees.
 dblength:=#Database;
 alerts := [dblength * k div 20 : k in [1..20]];
 
-for rp:=1 to number_of_repeats do
+rp:=0;
+while QQ`passnum eq rp then
+    rp +:= 1;
 
 	print "Working on pass",rp,"of",number_of_repeats;
 	
@@ -114,6 +116,7 @@ for rp:=1 to number_of_repeats do
 							if beta+t lt 1/a then
 								Database[index]`bound:=1.0/a;
 								Database[index]`conjecture:=true;
+                                QQ`passnum := rp;
 								//print n,d,"winner";
 							else
 								Database[index]`bound:=Min(Database[index]`bound,beta+t);
@@ -167,6 +170,7 @@ for rp:=1 to number_of_repeats do
 								if beta+t lt 1/a then
 									Database[index]`bound:=1.0/a;
 									Database[index]`conjecture:=true;
+                                    QQ`passnum := rp;
 									//print n,d,"winner";
 								else
 									Database[index]`bound:=Min(Database[index]`bound,beta+t);
@@ -213,10 +217,12 @@ for rp:=1 to number_of_repeats do
                 iindex := backrefs[[N,D]];
                 new_bound,check_conj:=checkS3wreathG(n,Database[index]`bound);
                 Database[iindex]`bound := Min(Database[iindex]`bound,new_bound);
+                if not Database[iindex]`conjecture and check_conj then
+                    QQ`passnum := rp;
+                end if;
                 Database[iindex]`conjecture := Database[iindex]`conjecture or check_conj;
             end if;
 		end if;
 
 	end for;
-
 end for;

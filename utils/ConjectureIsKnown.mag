@@ -21,6 +21,14 @@ while Database[i]`degree le 5 do
 		Database[i]`bound := 1.0;
 		if Database[i]`order eq Factorial(Database[i]`degree) then
 			Database[i]`conjecture := true;
+            deg:= Database[i]`degree;
+            if deg eq 3 then
+                Database[i]`reason:=<"Davenport-Heilbronn">;
+            elif deg eq 4 then
+                Database[i]`reason:=<"Bhargava4">;
+            elif deg eq 5 then
+                Database[i]`reason:=<"Bhargava5">;
+            end if;
 		end if;
 	end if;
 	i := i+1;
@@ -30,13 +38,13 @@ end while;
 
 /*
 Bhargava--Wood prove Conjecture 1 for S3 in degree 6
-	This is the group 6T2, which will always be entry 16 in our database.
-	(There are 14 transitive groups of degree up to 5.)
+	The group is 6T2
 */
 if MaxDegree ge 6 then
     iindex := backrefs[[6,2]];
 	Database[iindex]`bound := 1.0/3;
 	Database[iindex]`conjecture := true;
+	Database[iindex]`reason := <"Bhargava-Wood">;
 end if;
 
 /*
@@ -52,6 +60,7 @@ for d in [3..5] do
             if IsDefined(backrefs, [n*d, label]) then
                 Database[backrefs[[n*d,label]]]`conjecture := true;
                 Database[backrefs[[n*d,label]]]`bound := 1.0/Database[backrefs[[n*d,label]]]`malleindex;
+                Database[backrefs[[n*d,label]]]`reason := <"MTTW">;
             end if;
 		end for;
 	end for;

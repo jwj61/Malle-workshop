@@ -54,6 +54,7 @@ InitializeDatabase := function(glist)
 				if IsAbelian(N) then
 					G_rec`conjecture := true;
 					G_rec`isconcentrated := true;
+                    G_rec`reason := <"ALOWW-cor1.2">;
 				elif N ne G then
 					G_rec`conjecture := false;
 					G_rec`isconcentrated := true;
