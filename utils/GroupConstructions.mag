@@ -39,3 +39,47 @@ TransitiveDirectProduct:=function(G,H)
     GxH:=Codomain(CosetAction(imprimGxH,Stab));
     return GxH;
 end function;
+
+
+/*
+Given a finite group G, returns a smallest-degree faithful transitive
+permutation representation of G.  Such representations are the coset
+actions on G/S where S is core-free in G.  Among representations with
+minimal degree, ties are broken by the transitive group label nTt.
+
+The return values are:
+ - n, t: the transitive group label nTt of P;
+ - P: the permutation group image;
+ - phi: the coset-action homomorphism G -> P;
+ - S: the core-free subgroup used for the coset action.
+*/
+SmallestTransitivePermutationRepresentation:=function(G)
+    best_degree := #G + 1;
+    best_label := #G + 1;
+    best_rep := false;
+
+    for S_rec in Subgroups(G) do
+        S := S_rec`subgroup;
+        degree := #G div #S;
+
+        if degree le best_degree and #Core(G,S) eq 1 then
+            phi,P := CosetAction(G,S);
+            label,rep_degree := TransitiveGroupIdentification(P);
+            error if rep_degree ne degree,
+                "Coset-action degree disagrees with transitive-group identification";
+
+            if degree lt best_degree or label lt best_label then
+                best_degree := degree;
+                best_label := label;
+                best_rep := P;
+                best_phi := phi;
+                best_subgroup := S;
+            end if;
+        end if;
+    end for;
+
+    error if best_rep cmpeq false,
+        "No faithful transitive permutation representation found";
+
+    return best_degree,best_label,best_rep,best_phi,best_subgroup;
+end function;

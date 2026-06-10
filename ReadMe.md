@@ -4,5 +4,5 @@ grouplist is magma readable file setting a variable called `grouplist` which is 
 
 Currently to run the program on a file `grouplistfile` which has a list of gruops, the command is
 ```
-magma grouplistfile CreateDatabase.msg
+magma grouplistfile CreateDatabase.mag
 ```
