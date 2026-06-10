@@ -81,7 +81,7 @@ while QQ`passnum eq rp do
 			*****
 				To avoid running into memory issues, we are doing this only for solvable groups.
 		*/
-		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) and IsSolvable(nTd) then
+		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) then
 
 			/*
 			We iterate over all nontrivial abelian normal subgroups of nTd as the T group.
@@ -116,6 +116,8 @@ while QQ`passnum eq rp do
 							if beta+t lt 1/a then
 								Database[index]`bound:=1.0/a;
 								Database[index]`conjecture:=true;
+								ID1,ID2:=TransitiveGroupIdentification(nTdQuotientByT);
+								Database[index]`reason:=<"ALOWW-1.11",[ID2,ID1]>;
                                 QQ`passnum := rp;
 								//print n,d,"winner";
 							else
@@ -170,6 +172,7 @@ while QQ`passnum eq rp do
 								if beta+t lt 1/a then
 									Database[index]`bound:=1.0/a;
 									Database[index]`conjecture:=true;
+									Database[index]`reason:=<"ALOWW-1.11",[N,D]>;
                                     QQ`passnum := rp;
 									//print n,d,"winner";
 								else
@@ -219,6 +222,7 @@ while QQ`passnum eq rp do
                 Database[iindex]`bound := Min(Database[iindex]`bound,new_bound);
                 if not Database[iindex]`conjecture and check_conj then
                     QQ`passnum := rp;
+					Database[iindex]`reason:=<"ALOWW-1.9",[N,D]>;
                 end if;
                 Database[iindex]`conjecture := Database[iindex]`conjecture or check_conj;
             end if;
