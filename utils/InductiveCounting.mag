@@ -18,7 +18,7 @@ dblength:=#Database;
 alerts := [dblength * k div 20 : k in [1..20]];
 
 rp:=0;
-while QQ`passnum eq rp then
+while QQ`passnum eq rp do
     rp +:= 1;
 
 	print "Working on pass",rp,"of",number_of_repeats;
@@ -225,4 +225,4 @@ while QQ`passnum eq rp then
 		end if;
 
 	end for;
-end for;
+end while;
