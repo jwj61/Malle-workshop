@@ -8,8 +8,6 @@ families of groups which follow immediately from our work without additional che
 // We first create a useful auxiliary array, containing the index in Database of the first 
 //		group with a given degree
 
-FirstIndex := [1] cat [1+ &+[NumberOfTransitiveGroups(n) : n in [1..i-1]] : i in [2..MaxDegree]];
-
 /*
 Degrees up to 5
 	The number of extensions of degree \le 5 is known to be << X^1
