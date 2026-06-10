@@ -1,0 +1,62 @@
+load "utils/GroupConstructions.mag";
+
+CheckSmallestRepresentation := procedure(G, expected_degree, expected_label, name)
+    n,t,P,phi,S := SmallestTransitivePermutationRepresentation(G);
+
+    error if n ne expected_degree,
+        name cat ": expected degree " cat Sprint(expected_degree) cat
+        ", got " cat Sprint(n);
+    error if t ne expected_label,
+        name cat ": expected label " cat Sprint(expected_label) cat
+        ", got " cat Sprint(t);
+    error if Degree(P) ne n,
+        name cat ": returned permutation group has wrong degree";
+    error if not IsTransitive(P),
+        name cat ": returned permutation group is not transitive";
+    error if #Core(G,S) ne 1,
+        name cat ": returned subgroup is not core-free";
+    error if #Kernel(phi) ne 1,
+        name cat ": returned coset action is not faithful";
+
+    label,degree := TransitiveGroupIdentification(P);
+    error if degree ne n or label ne t,
+        name cat ": returned label does not identify the returned group";
+end procedure;
+
+CheckSmallestRepresentation(SymmetricGroup(1), 1, 1, "trivial group");
+CheckSmallestRepresentation(SmallGroup(2,1), 2, 1, "C2");
+CheckSmallestRepresentation(SymmetricGroup(3), 3, 2, "S3");
+CheckSmallestRepresentation(SmallGroup(8,3), 4, 3, "SmallGroup(8,3)");
+
+/*
+SmallGroup(24,8) has two minimal-degree faithful transitive representations,
+with labels 12T13 and 12T15.  The helper should choose the smaller
+transitive-group label.
+*/
+G := SmallGroup(24,8);
+best_degree := #G + 1;
+minimal_labels := {};
+
+for S_rec in Subgroups(G) do
+    S := S_rec`subgroup;
+    degree := #G div #S;
+
+    if #Core(G,S) eq 1 then
+        phi,P := CosetAction(G,S);
+        label,rep_degree := TransitiveGroupIdentification(P);
+
+        if degree lt best_degree then
+            best_degree := degree;
+            minimal_labels := {label};
+        elif degree eq best_degree then
+            Include(~minimal_labels,label);
+        end if;
+    end if;
+end for;
+
+error if best_degree ne 12 or minimal_labels ne {13,15},
+    "SmallGroup(24,8): tie-break fixture changed";
+
+CheckSmallestRepresentation(G, 12, 13, "SmallGroup(24,8)");
+
+print "SmallestTransitivePermutationRepresentation tests passed";
