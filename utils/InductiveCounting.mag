@@ -193,7 +193,7 @@ while QQ`passnum eq rp do
 							
 							if beta+t lt 1/a then
 								Database[index]`bound:=1/a;
-								Database[index]`bound:=true;
+								Database[index]`conjecture:=true;
 								//print n,d,"winner";
 							else
 								Database[index]`bound:=Min(Database[index]`bound,beta+t);
