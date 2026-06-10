@@ -14,7 +14,8 @@ degrees.
 
 
 
-
+dblength:=#Database;
+alerts := [dblength * k div 20 : k in [1..20]];
 
 for rp:=1 to number_of_repeats do
 
@@ -28,6 +29,11 @@ for rp:=1 to number_of_repeats do
 		n:=G_rec`degree;
 		d:=G_rec`label;
 				
+        if index in alerts then
+            print index, " out of ", dblength;
+        end if;
+
+        /*
 		if n gt n_old then
 			print "....Considering groups of degree",n;
 			n_old := n;
@@ -38,6 +44,7 @@ for rp:=1 to number_of_repeats do
 			decile := Floor(10*d/NumberOfTransitiveGroups(n));
 			print "........",decile*10,"%";
 		end if;
+        */
 		
 		nTd:=TransitiveGroup(n,d);
 		a:=G_rec`malleindex;
@@ -52,7 +59,10 @@ for rp:=1 to number_of_repeats do
 				if #Core(nTd,S) eq 1 then
 					e:=Swap(nTd,S);
 					D,N:=TransitiveGroupIdentification(CosetImage(nTd,S));
-					Database[index]`bound:=Min(Database[index]`bound,Database[FirstIndex[N]+D-1]`bound/e);
+                    if IsDefined(backrefs, [N,D]) then
+                        iindex := backrefs[[N,D]];
+                        Database[index]`bound:=Min(Database[index]`bound,Database[iindex]`bound/e);
+                    end if;
 				end if;
 			end for;
 		end if;
@@ -110,6 +120,7 @@ for rp:=1 to number_of_repeats do
 								//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
 							end if;
 						end if;
+
 				
 
 						/*
@@ -132,6 +143,7 @@ for rp:=1 to number_of_repeats do
 								//which agrees with NTD in the Database.
 								f,QuotRep:=CosetAction(nTdQuotientByT,S);
 								D,N:=TransitiveGroupIdentification(QuotRep);
+                                iindex:=backrefs[[N,D]];
 
 								Spullback:=Inverse(q)(S);
 
@@ -140,7 +152,7 @@ for rp:=1 to number_of_repeats do
 								e:=Swap(nTd,Spullback : T:=T);
 
 								//This gives us beta from Theorem 1.10
-								beta:=Database[FirstIndex[N]+D-1]`bound / e;
+								beta:=Database[iindex]`bound / e;
 								
 								/*
 								Next, we determine t by comparing |H^1_{ur}(K,T)|
@@ -165,7 +177,7 @@ for rp:=1 to number_of_repeats do
 					catch e
 						// Hard coding in some basic case detection
 						
-						print "Had an issue with group ",n,"T",d;
+						print "Had an issue with group ",n,"T",d, " ", e;
 						
 						// If T is central, then G/T is nilpotent iff G is
 						if IsCentral(nTd,T) and IsNilpotent(nTd) then
@@ -197,9 +209,12 @@ for rp:=1 to number_of_repeats do
 		if 3*n le MaxDegree then
 			S3wrnTd:=WreathProduct(TransitiveGroup(3,2),nTd);
 			D,N:=TransitiveGroupIdentification(S3wrnTd);
-			new_bound,check_conj:=checkS3wreathG(n,Database[index]`bound);
-			Database[FirstIndex[N]+D-1]`bound := Min(Database[FirstIndex[N]+D-1]`bound,new_bound);
-			Database[FirstIndex[N]+D-1]`conjecture := Database[FirstIndex[N]+D-1]`conjecture or check_conj;
+            if IsDefined(backrefs, [N,D]) then
+                iindex := backrefs[[N,D]];
+                new_bound,check_conj:=checkS3wreathG(n,Database[index]`bound);
+                Database[iindex]`bound := Min(Database[iindex]`bound,new_bound);
+                Database[iindex]`conjecture := Database[iindex]`conjecture or check_conj;
+            end if;
 		end if;
 
 	end for;

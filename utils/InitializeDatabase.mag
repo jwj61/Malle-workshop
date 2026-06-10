@@ -6,23 +6,27 @@
 	It also seeds the array with basic information about the group, including preliminary bounds.
 */
 
-GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt >;
+GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt, reason:Tup >;
 
+backrefs:=AssociativeArray();
+j:=1;
+for g in grouplist do
+    backrefs[[g[1],g[2]]] := j;
+    j +:= 1;
+end for;
 
-InitializeDatabase := function(maxDegree)       
+InitializeDatabase := function(glist)       
     Database := [];
              
-    Append(~Database, rec< GroupCountingInfo | degree:=1, label:=1, order:=1, malleindex:=0, bound:=0.0, conjecture:=true, isnilpotent:=true, issolvable:=true, isconcentrated:=false>);
+    Append(~Database, rec< GroupCountingInfo | degree:=1, label:=1, order:=1, malleindex:=0, bound:=0.0, conjecture:=true, isnilpotent:=true, issolvable:=true, isconcentrated:=false, reason:=<>>);
 
-    for n:=2 to maxDegree do
-        TGP := TransitiveGroupProcess(n);
-        
-        while not IsEmpty(TGP) do
-			
-			G:=Current(TGP);
+    for group in grouplist do
+        n := group[1];
+        t := group[2];
+        G := TransitiveGroup(n, t);
 			
 			// Seed with basic info about G
-			G_rec := rec< GroupCountingInfo | degree:=n, label:=TransitiveGroupIdentification(G), malleindex:=MinIndex(G), order:=#G>;
+			G_rec := rec< GroupCountingInfo | degree:=n, label:=TransitiveGroupIdentification(G), malleindex:=MinIndex(G), order:=#G, reason:=<>>;
 			
 			if IsAbelian(G) then
 			
@@ -32,6 +36,7 @@ InitializeDatabase := function(maxDegree)
 				G_rec`conjecture := true;
 				G_rec`isnilpotent := true;
 				G_rec`issolvable := true;
+                G_rec`reason := <"Maki">;
 				if IsPrime(#G) then
 					G_rec`isconcentrated := true;
 				else
@@ -75,8 +80,6 @@ InitializeDatabase := function(maxDegree)
 				Append(~Database, G_rec);
 			end if;
             
-            Advance(~TGP);
-        end while;
     end for;
 	return Database;
 end function;

@@ -37,10 +37,14 @@ load "utils/Comparing_Orderings.mag";
 load "utils/Pontryagin_Dual_Class_Group_Bounds.mag";
 	// Implemenets a function to compute a bound on H1_ur using the Pontryagin dual
 
+// Record which pass has last changed the data
+AddAttribute(FldRat,"passnum");
+QQ := Rationals();
+QQ`passnum := 0;
 
 // We're now reading to actually some of these functions.
 
-MaxDegree:=23;
+MaxDegree:=47;
 
 print "";
 print "Initializing database with degrees up to", MaxDegree;
@@ -68,7 +72,7 @@ load "utils/InductiveCounting.mag";
 TimeString := Time();
 TimeString := Substring(TimeString, Index(TimeString," ")+1,10);
 
-File := "SavedDatabase_" cat Sprint(MaxDegree) cat "_" cat Sprint(number_of_repeats) cat "_" cat TimeString cat".mag";
+File := "SavedDatabase_" cat Sprint(#Database) cat "_" cat Sprint(number_of_repeats) cat "_" cat TimeString cat".mag";
 GCRStr := "GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt >; \n";
 DBStr := "Database:=" cat Sprint(Database) cat ";\n";
 

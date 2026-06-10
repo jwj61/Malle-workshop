@@ -34,8 +34,9 @@ Bhargava--Wood prove Conjecture 1 for S3 in degree 6
 	(There are 14 transitive groups of degree up to 5.)
 */
 if MaxDegree ge 6 then
-	Database[16]`bound := 1.0/3;
-	Database[16]`conjecture := true;
+    iindex := backrefs[[6,2]];
+	Database[iindex]`bound := 1.0/3;
+	Database[iindex]`conjecture := true;
 end if;
 
 /*
@@ -48,8 +49,10 @@ for d in [3..5] do
 		for A in TransitiveGroups(n, IsAbelian) do
 			SdxA := TransitiveDirectProduct(Sd,A);
 			label := TransitiveGroupIdentification(SdxA);
-			Database[FirstIndex[d*n]+label-1]`conjecture := true;
-			Database[FirstIndex[d*n]+label-1]`bound := 1.0/Database[FirstIndex[d*n]+label-1]`malleindex;
+            if IsDefined(backrefs, [n*d, label]) then
+                Database[backrefs[[n*d,label]]]`conjecture := true;
+                Database[backrefs[[n*d,label]]]`bound := 1.0/Database[backrefs[[n*d,label]]]`malleindex;
+            end if;
 		end for;
 	end for;
 end for;
