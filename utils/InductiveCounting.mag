@@ -81,7 +81,7 @@ while QQ`passnum eq rp do
 			*****
 				To avoid running into memory issues, we are doing this only for solvable groups.
 		*/
-		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) and IsSolvable(nTd) then
+		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) then
 
 			/*
 			We iterate over all nontrivial abelian normal subgroups of nTd as the T group.
