@@ -73,7 +73,7 @@ TimeString := Time();
 TimeString := Substring(TimeString, Index(TimeString," ")+1,10);
 
 File := "SavedDatabase_" cat Sprint(#Database) cat "_" cat Sprint(number_of_repeats) cat "_" cat TimeString cat".mag";
-GCRStr := "GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt >; \n";
+GCRStr := "GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt, reason:Tup >; \n";
 DBStr := "Database:=" cat Sprint(Database) cat ";\n";
 
 PrintFile( File, GCRStr cat DBStr);

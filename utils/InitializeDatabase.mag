@@ -11,7 +11,7 @@ GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntE
 backrefs:=AssociativeArray();
 j:=1;
 for g in grouplist do
-    backrefs[[g[1],g[2]]] := j;
+    backrefs[[g[1],g[2]]] := j+1;
     j +:= 1;
 end for;
 
