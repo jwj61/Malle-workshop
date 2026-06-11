@@ -16,6 +16,7 @@ degrees.
 
 dblength:=#Database;
 alerts := [dblength * k div 20 : k in [1..20]];
+OrderingIdentifyCache := AssociativeArray();
 
 rp:=0;
 while QQ`passnum eq rp do
@@ -57,28 +58,30 @@ while QQ`passnum eq rp do
 			representations of the same group. (We don't bother looking for upper bounds that would violate
 			Weak Malle.)
 		*/
-		if G_rec`bound gt 1/a then
-			for S_rec in Subgroups(nTd: IndexLimit := MaxDegree) do
-				S:=S_rec`subgroup;
-				if #Core(nTd,S) eq 1 then
-					e:=Swap(nTd,S);
-					D,N:=TransitiveGroupIdentification(CosetImage(nTd,S));
-if [G_rec`degree, G_rec`label] eq [16,184] then
-print "[D,N]=",[D,N];
-end if;
-                    if IsDefined(backrefs, [N,D]) then
-                        iindex := backrefs[[N,D]];
-if [G_rec`degree, G_rec`label] eq [16,184] then
-print "is defined", [Database[index]`bound,Database[iindex]`bound/e];
-end if;
-if Database[iindex]`bound/e lt Database[iindex]`bound/e then
-    QQ`passnum := rp;
-end if;
-                        Database[index]`bound:=Min(Database[index]`bound,Database[iindex]`bound/e);
-                    end if;
-				end if;
-			end for;
-		end if;
+			if G_rec`bound gt 1/a then
+				for S_rec in Subgroups(nTd: IndexLimit := MaxDegree) do
+					S:=S_rec`subgroup;
+					if #Core(nTd,S) eq 1 then
+						rep_degree := #nTd div #S;
+						if IsDefined(backref_degrees, rep_degree) then
+							cache_key := <n, d, rep_degree, S>;
+							if IsDefined(OrderingIdentifyCache, cache_key) then
+								cached := OrderingIdentifyCache[cache_key];
+								D := cached[1];
+								N := cached[2];
+							else
+								D,N:=TransitiveGroupIdentification(CosetImage(nTd,S));
+								OrderingIdentifyCache[cache_key] := [D,N];
+							end if;
+							if IsDefined(backrefs, [N,D]) then
+								e:=Swap(nTd,S);
+								iindex := backrefs[[N,D]];
+								Database[index]`bound:=Min(Database[index]`bound,Database[iindex]`bound/e);
+							end if;
+						end if;
+					end if;
+				end for;
+			end if;
 
 		/*
 			We now apply Theorem 1.10 to any group for which Conjecture 1 has not
@@ -154,47 +157,52 @@ end if;
 						with G/T a transitive representation of the quotient group.
 						*/
 						
-						for S_rec in Subgroups(nTdQuotientByT : IndexLimit := MaxDegree) do
-							S:=S_rec`subgroup;
-							if (Database[index]`conjecture eq false) and (#Core(nTdQuotientByT,S) eq 1) then
+							for S_rec in Subgroups(nTdQuotientByT : IndexLimit := MaxDegree) do
+								S:=S_rec`subgroup;
+								if (Database[index]`conjecture eq false) and (#Core(nTdQuotientByT,S) eq 1) then
+									rep_degree := #nTdQuotientByT div #S;
+									if IsDefined(backref_degrees, rep_degree) then
 
-								//QuotRep defined below is a transitive rep of nTd / T,
-								//which agrees with NTD in the Database.
-								f,QuotRep:=CosetAction(nTdQuotientByT,S);
-								D,N:=TransitiveGroupIdentification(QuotRep);
-                                iindex:=backrefs[[N,D]];
+										//QuotRep defined below is a transitive rep of nTd / T,
+										//which agrees with NTD in the Database.
+										f,QuotRep:=CosetAction(nTdQuotientByT,S);
+										D,N:=TransitiveGroupIdentification(QuotRep);
+										if IsDefined(backrefs, [N,D]) then
+											iindex:=backrefs[[N,D]];
 
-								Spullback:=Inverse(q)(S);
+											Spullback:=Inverse(q)(S);
 
-								//We call Swap to determine the maximal exponent e
-								//with |disc_{nTd/S}|^e << |q_* disc_{nTd}|.
-								e:=Swap(nTd,Spullback : T:=T);
+											//We call Swap to determine the maximal exponent e
+											//with |disc_{nTd/S}|^e << |q_* disc_{nTd}|.
+											e:=Swap(nTd,Spullback : T:=T);
 
-								//This gives us beta from Theorem 1.10
-								beta:=Database[iindex]`bound / e;
+											//This gives us beta from Theorem 1.10
+											beta:=Database[iindex]`bound / e;
 								
 								/*
 								Next, we determine t by comparing |H^1_{ur}(K,T)|
 								to the discriminant associated to the representation NTD.
 								This is done by calling the function PD_H1ur_Bound.
 								*/
-								t:=PD_H1ur_Bound(nTd,T) / e;
+											t:=PD_H1ur_Bound(nTd,T) / e;
 								
 								/*
 								We now apply the conclusion of Theorem 1.10
 								*/
-								if beta+t lt 1/a then
-									Database[index]`bound:=1.0/a;
-									Database[index]`conjecture:=true;
-									Database[index]`reason:=<"ALOWW-1.11",[N,D]>;
-                                    QQ`passnum := rp;
-									//print n,d,"winner";
-								else
-									Database[index]`bound:=Min(Database[index]`bound,beta+t);
-									//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
+											if beta+t lt 1/a then
+												Database[index]`bound:=1.0/a;
+												Database[index]`conjecture:=true;
+												Database[index]`reason:=<"ALOWW-1.11",[N,D]>;
+												QQ`passnum := rp;
+												//print n,d,"winner";
+											else
+												Database[index]`bound:=Min(Database[index]`bound,beta+t);
+												//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
+											end if;
+										end if;
+									end if;
 								end if;
-							end if;
-						end for;
+							end for;
 					catch e
 						// Hard coding in some basic case detection
 						

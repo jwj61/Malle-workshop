@@ -9,9 +9,11 @@
 GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt, reason:Tup >;
 
 backrefs:=AssociativeArray();
+backref_degrees:=AssociativeArray();
 j:=1;
 for g in grouplist do
     backrefs[[g[1],g[2]]] := j+1;
+    backref_degrees[g[1]] := true;
     j +:= 1;
 end for;
 
@@ -33,7 +35,7 @@ InitializeDatabase := function()
         G := TransitiveGroup(n, t);
 			
 			// Seed with basic info about G
-			G_rec := rec< GroupCountingInfo | degree:=n, label:=TransitiveGroupIdentification(G), malleindex:=MinIndex(G), order:=#G, reason:=<>>;
+			G_rec := rec< GroupCountingInfo | degree:=n, label:=t, malleindex:=MinIndex(G), order:=#G, reason:=<>>;
 			
 			if IsAbelian(G) then
 			
