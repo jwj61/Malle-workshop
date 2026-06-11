@@ -13,25 +13,31 @@ Degrees up to 5
 	The number of extensions of degree \le 5 is known to be << X^1
 	Moreover, Conjecture 1 is known for S_n with n \le 5.
 */
-i := 1;
-while Database[i]`degree le 5 do
-	if Database[i]`bound gt 1.0 then
-		Database[i]`bound := 1.0;
-		if Database[i]`order eq Factorial(Database[i]`degree) then
-			Database[i]`conjecture := true;
-            deg:= Database[i]`degree;
-            if deg eq 3 then
-                Database[i]`reason:=<"Davenport-Heilbronn">;
-            elif deg eq 4 then
-                Database[i]`reason:=<"Bhargava4">;
-            elif deg eq 5 then
-                Database[i]`reason:=<"Bhargava5">;
-            end if;
-		end if;
-	end if;
-	i := i+1;
-end while;
 
+/* Number of transitive groups for degree <= 5 */
+numgroups:=[1,1,2,5,5];
+
+for n in [2,3,4,5] do
+    for t in [1..numgroups[n]] do
+        if IsDefined(backrefs, [n,t]) then
+            i:=backrefs[[n,t]];
+            if Database[i]`bound gt 1.0 then
+                Database[i]`bound := 1.0;
+                if Database[i]`order eq Factorial(Database[i]`degree) then
+                    Database[i]`conjecture := true;
+                    deg:= Database[i]`degree;
+                    if deg eq 3 then
+                        Database[i]`reason:=<"Davenport-Heilbronn">;
+                    elif deg eq 4 then
+                        Database[i]`reason:=<"Bhargava4">;
+                    elif deg eq 5 then
+                        Database[i]`reason:=<"Bhargava5">;
+                    end if;
+                end if;
+            end if;
+        end if;
+    end for;
+end for;
 
 
 /*

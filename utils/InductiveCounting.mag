@@ -21,7 +21,7 @@ rp:=0;
 while QQ`passnum eq rp do
     rp +:= 1;
 
-	print "Working on pass",rp,"of",number_of_repeats;
+	print "Working on pass",rp;
 	
 	n_old := 0;
 	decile := 0;
@@ -63,8 +63,17 @@ while QQ`passnum eq rp do
 				if #Core(nTd,S) eq 1 then
 					e:=Swap(nTd,S);
 					D,N:=TransitiveGroupIdentification(CosetImage(nTd,S));
+if [G_rec`degree, G_rec`label] eq [16,184] then
+print "[D,N]=",[D,N];
+end if;
                     if IsDefined(backrefs, [N,D]) then
                         iindex := backrefs[[N,D]];
+if [G_rec`degree, G_rec`label] eq [16,184] then
+print "is defined", [Database[index]`bound,Database[iindex]`bound/e];
+end if;
+if Database[iindex]`bound/e lt Database[iindex]`bound/e then
+    QQ`passnum := rp;
+end if;
                         Database[index]`bound:=Min(Database[index]`bound,Database[iindex]`bound/e);
                     end if;
 				end if;
