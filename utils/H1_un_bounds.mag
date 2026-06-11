@@ -1,1 +1,8 @@
-
+G:=TransitiveGroup(6,9);
+T:=DerivedSubgroup(G);
+function PD_H1ur_Bound2(G,T)
+    Z:=Centralizer(G,T);
+    ZGT:=quo<G|Z>;
+    return [SubgroupClasses(C`subgroup):C in CyclicSubgroups(ZGT)]; 
+end function;
+PD_H1ur_Bound2(G,T);
