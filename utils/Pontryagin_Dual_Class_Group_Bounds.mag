@@ -50,6 +50,9 @@ function PD_H1ur_Bound(G,T)
         //Fp:=TrivialModule(GquoHZG,FiniteField(p));
         //Mvee:=HomMod(M,Fp);
 
+        //Possible mistake: Constituents() may not aggregate repeated
+        //isomorphic constituents as needed here.  See
+        //utils/PD_H1ur_Bound_constituent_multiplicity_issue.md.
         //The Constituents() command returns a list of composition factors of
         //the module, and a corresponding list of multiplicities
         CompositionFactors,Multiplicity:=Constituents(SocM);

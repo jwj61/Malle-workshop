@@ -1,0 +1,223 @@
+/*
+MAGMA: helper functions for abelian inductive summation.
+
+The functions below represent conjugacy classes of cyclic subgroups by a list
+of generator elements.  The intended list is:
+
+ - for a group B, CyclicSubgroupGeneratorRepresentatives(B);
+ - for a quotient G/T, the third output of
+      QuotientCyclicSubgroupGeneratorRepresentatives(G,T).
+
+This is a list with one element generating each conjugacy class of cyclic
+subgroups.  It is not a list of representatives for conjugacy classes of
+elements.
+
+For quotient groups, the quotient map and the generator list must come from
+the same quotient construction.  If
+
+    Q,qT,gens:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
+
+then qT and gens should be passed together to every function below that works
+with elements of G/T.  This avoids trying to lift an element of one Magma
+quotient object through a map whose codomain is a different quotient object,
+even if both quotient objects are mathematically G/T.
+
+The function PD_H1ur_Bound_Vec takes:
+ - G, a finite group;
+ - T, an abelian normal subgroup of G;
+ - qT, a quotient map G -> G/T;
+ - cyclic_generators, a complete list of elements of Codomain(qT), one
+      generating each conjugacy class of cyclic subgroups of G/T.
+
+It returns a function on cyclic_generators.  If g in G/T is one of the
+generators, the returned value is
+    (d_G(T)/2) * |G/Centralizer_G(T)|
+        * (1 - 1 / Order(image(g) in G/Centralizer_G(T))),
+where d_G(T) is the minimal number of generators of T as a G-module under
+conjugation.
+
+The function Pushforward_Discriminant_Exponents takes:
+ - G, a permutation group;
+ - T, a normal subgroup of G;
+ - qT, a quotient map G -> G/T;
+ - cyclic_generators, a complete list of elements of Codomain(qT), one
+      generating each conjugacy class of cyclic subgroups of G/T.
+
+The standard call is
+
+    Q,qT,gens:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
+    F:=Pushforward_Discriminant_Exponents(G,T,qT,gens);
+
+For gT in gens, F(gT) is the minimum of ind(h), over h in G with qT(h)=gT,
+where ind is computed in the given permutation representation of G.
+
+The function Inductive_Theta_Bound takes the same inputs as
+Pushforward_Discriminant_Exponents, with T required to be abelian, and returns
+the maximum over nonidentity gT in cyclic_generators of
+
+    (Inertial_Multiplicity_Bound(G/T)(gT)
+        + PD_H1ur_Bound_Vec(G,T,qT,cyclic_generators)(gT))
+            / Pushforward_Discriminant_Exponents(G,T,qT,cyclic_generators)(gT).
+
+The identity element of G/T must be included in cyclic_generators, but is
+ignored in the maximum.
+*/
+
+PermutationIndex:=function(g)
+    C:=CycleStructure(g);
+    k:=0;
+    n:=0;
+
+    for i:=1 to #C do
+       k:=k+C[i][2];
+       n:=n+C[i][2]*C[i][1];
+    end for;
+
+    return n-k;
+end function;
+
+CyclicSubgroupGenerator:=function(H)
+    if #H eq 1 then
+        return Id(H);
+    end if;
+
+    for h in H do
+        if Order(h) eq #H then
+            return h;
+        end if;
+    end for;
+
+    error "Input subgroup is not cyclic";
+end function;
+
+CyclicSubgroupGeneratorRepresentatives:=function(Q)
+    generators:=[];
+
+    for S_rec in Subgroups(Q) do
+        H:=S_rec`subgroup;
+        if IsCyclic(H) then
+            Append(~generators,Q!CyclicSubgroupGenerator(H));
+        end if;
+    end for;
+
+    return generators;
+end function;
+
+QuotientCyclicSubgroupGeneratorRepresentatives:=function(G,T)
+    error if not IsNormal(G,T), "T must be normal in G so that G/T is defined";
+
+    Q,qT:=quo<G|T>;
+    return Q,qT,CyclicSubgroupGeneratorRepresentatives(Q);
+end function;
+
+RequireGeneratorsInParent:=procedure(cyclic_generators,Q)
+    for g in cyclic_generators do
+        error if Parent(g) ne Q, "Cyclic generator has the wrong parent";
+    end for;
+end procedure;
+
+Inertial_Multiplicity_Bound:=function(B)
+    return function(b)
+        error if Parent(b) ne B, "Input must be a generator element of B";
+
+        return 4.0 * Sqrt(#B) * (1 - 1/Order(b));
+    end function;
+end function;
+
+Pushforward_Discriminant_Exponents:=function(G,T,qT,cyclic_generators)
+    error if not IsNormal(G,T), "T must be normal in G so that G/T is defined";
+
+    error if Domain(qT) ne G, "qT must have domain G";
+    error if Kernel(qT) ne T, "qT must have kernel T";
+    Q:=Codomain(qT);
+    RequireGeneratorsInParent(cyclic_generators,Q);
+
+    return function(gT)
+        error if Parent(gT) ne Q, "Input must be an element of Codomain(qT)";
+
+        lift:=gT @@ qT;
+        return 1.0 * Minimum([PermutationIndex(lift*t) : t in T]);
+    end function;
+end function;
+
+/*
+Returns the minimal number of generators of T as a G-module under conjugation.
+
+The input T must be abelian and normal in G.  For each prime p, we look at the
+p-Sylow subgroup of Socle(T).  This is an elementary abelian p-group with a
+conjugation action of G, hence an F_p[G]-module.  As in PD_H1ur_Bound, the
+number of module generators is the maximum multiplicity of a simple constituent
+appearing in these semisimple socle pieces.
+*/
+MinimalGModuleGenerators:=function(G,T)
+    error if not IsNormal(G,T), "T must be normal in G";
+    error if not IsAbelian(T), "T must be abelian";
+
+    Soc:=Socle(T);
+    d:=0;
+    Triv:=sub<G|Id(G)>;
+
+    prime_factors:=[factor[1] : factor in Factorization(#Soc)];
+    for p in prime_factors do
+        Sp:=Sylow(Soc,p);
+
+        M:=GModule(G,Sp,Triv);
+        SocM:=Socle(M);
+        Constituents:=ConstituentsWithMultiplicities(SocM);
+
+        for constituent in Constituents do
+            d:=Max(d,constituent[2]);
+        end for;
+    end for;
+
+    return d;
+end function;
+
+PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
+    error if not IsNormal(G,T), "T must be normal in G so that G/T is defined";
+    error if not IsAbelian(T), "T must be abelian";
+
+    error if Domain(qT) ne G, "qT must have domain G";
+    error if Kernel(qT) ne T, "qT must have kernel T";
+    Q:=Codomain(qT);
+    RequireGeneratorsInParent(cyclic_generators,Q);
+
+    Bprime,qB:=quo<G|Centralizer(G,T)>;
+    generator_factor:=MinimalGModuleGenerators(G,T)/2;
+
+    return function(g)
+        error if Parent(g) ne Q, "Input must be an element of Codomain(qT)";
+
+        lift:=g @@ qT;
+        image_order:=Order(qB(lift));
+
+        return 1.0 * generator_factor * #Bprime * (1 - 1/image_order);
+    end function;
+end function;
+
+Inductive_Theta_Bound:=function(G,T,qT,cyclic_generators)
+    error if not IsNormal(G,T), "T must be normal in G so that G/T is defined";
+    error if not IsAbelian(T), "T must be abelian";
+
+    error if Domain(qT) ne G, "qT must have domain G";
+    error if Kernel(qT) ne T, "qT must have kernel T";
+    Q:=Codomain(qT);
+    RequireGeneratorsInParent(cyclic_generators,Q);
+    error if not Id(Q) in cyclic_generators, "The identity element of G/T must be included";
+
+    nonidentity_generators:=[gT : gT in cyclic_generators | gT ne Id(Q)];
+    error if #nonidentity_generators eq 0, "Need at least one nonidentity cyclic generator";
+
+    inertial_bound:=Inertial_Multiplicity_Bound(Q);
+    pd_bound:=PD_H1ur_Bound_Vec(G,T,qT,cyclic_generators);
+    pushforward_exponent:=Pushforward_Discriminant_Exponents(G,T,qT,cyclic_generators);
+
+    theta_values:=[];
+    for gT in nonidentity_generators do
+        exponent:=pushforward_exponent(gT);
+        error if exponent eq 0, "Pushforward discriminant exponent must be nonzero";
+        Append(~theta_values,(inertial_bound(gT) + pd_bound(gT))/exponent);
+    end for;
+
+    return Maximum(theta_values);
+end function;

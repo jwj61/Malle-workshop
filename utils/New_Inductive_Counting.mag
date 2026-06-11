@@ -1,0 +1,158 @@
+/*
+MAGMA: inductive counting (to be included after ConjectureIsKnown.mag).
+
+Now, we induct through the Database improving the known upper bounds
+through Theorems 1.9 and 1.10 as we go. At any point that these theorems
+prove Conjecture 1, we update the corresponding table.
+
+This is an experimental copy of InductiveCounting.mag.  The first
+representation-comparison loop and the S3 wreath step are unchanged, but the
+old Theorem 1.10 search over quotient permutation representations has been
+replaced by the abelian inductive summation theta bound from
+Abelian_Inductive_Summation.mag.  The IMB and H^1 input are currently extremely weak
+(but true) and will be replaced by optimized bounds from the various working groups.
+*/
+
+/*
+We may want to repeat this process more that once. I tested degree 8,
+and found no benefit to repeating. But perhaps there will be a benefit for larger
+degrees.
+*/
+
+
+
+dblength:=#Database;
+alerts := [dblength * k div 20 : k in [1..20]];
+OrderingIdentifyCache := AssociativeArray();
+
+rp:=0;
+while QQ`passnum eq rp do
+    rp +:= 1;
+
+	print "Working on pass",rp;
+	
+	n_old := 0;
+	decile := 0;
+
+	for index in [2..#Database] do
+		G_rec := Database[index];
+		n:=G_rec`degree;
+		d:=G_rec`label;
+				
+        if index in alerts then
+            print index, " out of ", dblength;
+        end if;
+
+        /*
+		if n gt n_old then
+			print "....Considering groups of degree",n;
+			n_old := n;
+			decile := 0;
+		end if;
+		
+		if Floor(10*d/NumberOfTransitiveGroups(n)) gt decile then
+			decile := Floor(10*d/NumberOfTransitiveGroups(n));
+			print "........",decile*10,"%";
+		end if;
+        */
+		
+		nTd:=TransitiveGroup(n,d);
+		a:=G_rec`malleindex;
+
+
+		/*
+			If we do not already know weak Malle, we update any upper bounds by comparing with other permutation
+			representations of the same group. (We don't bother looking for upper bounds that would violate
+			Weak Malle.)
+		*/
+			if G_rec`bound gt 1/a then
+				for S_rec in Subgroups(nTd: IndexLimit := MaxDegree) do
+					S:=S_rec`subgroup;
+					if #Core(nTd,S) eq 1 then
+						rep_degree := #nTd div #S;
+						if IsDefined(backref_degrees, rep_degree) then
+							cache_key := <n, d, rep_degree, S>;
+							if IsDefined(OrderingIdentifyCache, cache_key) then
+								cached := OrderingIdentifyCache[cache_key];
+								D := cached[1];
+								N := cached[2];
+							else
+								D,N:=TransitiveGroupIdentification(CosetImage(nTd,S));
+								OrderingIdentifyCache[cache_key] := [D,N];
+							end if;
+							if IsDefined(backrefs, [N,D]) then
+								e:=Swap(nTd,S);
+								iindex := backrefs[[N,D]];
+								Database[index]`bound:=Min(Database[index]`bound,Database[iindex]`bound/e);
+							end if;
+						end if;
+					end if;
+				end for;
+			end if;
+
+		/*
+			We now apply Theorem 1.10 to any group for which Conjecture 1 has not
+			already been proven. We have already included the best possible results
+			for nilpotent groups, so we can skip these cases as well.
+		
+			For the below, if the conjecture is true, we don't need to apply Theorem 1.10.
+			If the group is nilpotent, we don't expect to get a new asymptotic beyond 
+			what is given by the initialization that uses Corollary 1.2 of ALLOW, and we
+			already have the best upper bound we would expect, so it would seem wasteful
+			to run this (even if we haven't proven it couldn't change the database).
+			Similarly, if we are in another situation where we have the Weak Malle upper 
+			bound, and the MinIndexSubgroup is not abelian, we would be shocked to
+			get an asymptotic from this, so we don't try in order to be more efficient.
+		
+		*/
+		if (Database[index]`conjecture eq false) and (not IsNilpotent(nTd)) and (Database[index]`bound gt 1/a or IsAbelian(MinIndexSubgroup(nTd))) then
+
+			/*
+			Experimental theta-bound replacement for the old Theorem 1.10
+			quotient-representation search.  For each nontrivial abelian normal
+			subgroup T, we compute the cyclic-subgroup generators of nTd/T with
+			the matching quotient map qT and apply Inductive_Theta_Bound.
+			*/
+				for T_rec in NormalSubgroups(nTd) do
+					T:=T_rec`subgroup;
+					if (Database[index]`conjecture eq false) and IsAbelian(T) and #T ne 1 then
+						try
+							Q,qT,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(nTd,T);
+							theta:=Inductive_Theta_Bound(nTd,T,qT,cyclic_generators);
+
+							if theta lt 1/a then
+								Database[index]`bound:=1.0/a;
+								Database[index]`conjecture:=true;
+								QQ`passnum := rp;
+								Database[index]`reason:=<"ALOWW-1.11","IMB">;
+							else
+								Database[index]`bound:=Min(Database[index]`bound,theta);
+							end if;
+						catch e
+							print "Had an issue with group ",n,d," and T of order ",#T, " ", e;
+						end try;
+					end if;
+				end for;
+		end if;
+		
+		/*
+		If the group S_3 wr G is included in Database, we apply Theorem 1.9 to it.
+		*/
+		
+		if 3*n le MaxDegree then
+			S3wrnTd:=WreathProduct(TransitiveGroup(3,2),nTd);
+			D,N:=TransitiveGroupIdentification(S3wrnTd);
+            if IsDefined(backrefs, [N,D]) then
+                iindex := backrefs[[N,D]];
+                new_bound,check_conj:=checkS3wreathG(n,Database[index]`bound);
+                Database[iindex]`bound := Min(Database[iindex]`bound,new_bound);
+                if not Database[iindex]`conjecture and check_conj then
+                    QQ`passnum := rp;
+					Database[iindex]`reason:=<"ALOWW-1.9",[N,D]>;
+                end if;
+                Database[iindex]`conjecture := Database[iindex]`conjecture or check_conj;
+            end if;
+		end if;
+
+	end for;
+end while;
