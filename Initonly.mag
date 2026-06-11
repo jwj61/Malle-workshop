@@ -92,8 +92,4 @@ for j:=1 to #Database do
     PrintFile(File, Sprint(Database[j]) cat ",");
 end for;
 
-DBStr := Sprint(Database) cat ",\n";
-
-PrintFile(File, DBStr);
-
 quit;
