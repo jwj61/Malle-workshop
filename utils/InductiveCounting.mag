@@ -76,6 +76,9 @@ while QQ`passnum eq rp do
 							if IsDefined(backrefs, [N,D]) then
 								e:=Swap(nTd,S);
 								iindex := backrefs[[N,D]];
+                                if Database[index]`bound gt Database[iindex]`bound/e then
+                                    QQ`passnum:=rp;
+                                end if;
 								Database[index]`bound:=Min(Database[index]`bound,Database[iindex]`bound/e);
 							end if;
 						end if;
@@ -140,6 +143,9 @@ while QQ`passnum eq rp do
 							else
 								Database[index]`bound:=Min(Database[index]`bound,beta+t);
 								//print n,d,"current: ",Database[index][3],"theorem: ",beta+t,"=",beta,"+",t;
+                                if Database[index]`bound gt beta+t then
+                                    QQ`passnum := rp;
+                                end if;
 							end if;
 						end if;
 
