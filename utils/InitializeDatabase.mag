@@ -17,12 +17,19 @@ for g in grouplist do
     j +:= 1;
 end for;
 
-InitializeDatabase := function(glist)       
+InitializeDatabase := function()       
     Database := [];
              
     Append(~Database, rec< GroupCountingInfo | degree:=1, label:=1, order:=1, malleindex:=0, bound:=0.0, conjecture:=true, isnilpotent:=true, issolvable:=true, isconcentrated:=false, reason:=<>>);
 
+    numgroups:=#grouplist;
+    count:=0;
+
     for group in grouplist do
+        count+:=1;
+        if (count mod 1000) eq 0 then
+            print "Init", count, "of", numgroups;
+        end if;
         n := group[1];
         t := group[2];
         G := TransitiveGroup(n, t);

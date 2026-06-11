@@ -47,10 +47,10 @@ QQ`passnum := 0;
 MaxDegree:=47;
 
 print "";
-print "Initializing database with degrees up to", MaxDegree;
+print "Initializing database for", #grouplist, "groups";
 
 
-Database:= InitializeDatabase(MaxDegree);
+Database:= InitializeDatabase();
 
 print "....Done.";
 print "";

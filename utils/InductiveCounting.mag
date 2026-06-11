@@ -22,7 +22,7 @@ rp:=0;
 while QQ`passnum eq rp do
     rp +:= 1;
 
-	print "Working on pass",rp,"of",number_of_repeats;
+	print "Working on pass",rp;
 	
 	n_old := 0;
 	decile := 0;
