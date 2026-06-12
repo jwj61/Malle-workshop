@@ -29,8 +29,9 @@ The function PD_H1ur_Bound_Vec takes:
  - cyclic_generators, a complete list of elements of Codomain(qT), one
       generating each conjugacy class of cyclic subgroups of G/T.
 
-It returns a function on cyclic_generators.  If g in G/T is one of the
-generators, the returned value is
+It returns a list of functions on cyclic_generators.  The current placeholder
+implementation returns a list with one function.  If g in G/T is one of the
+generators, that function returns
     (d_G(T)/2) * |G/Centralizer_G(T)|
         * (1 - 1 / Order(image(g) in G/Centralizer_G(T))),
 where d_G(T) is the minimal number of generators of T as a G-module under
@@ -53,10 +54,10 @@ where ind is computed in the given permutation representation of G.
 
 The function Inductive_Theta_Bound takes the same inputs as
 Pushforward_Discriminant_Exponents, with T required to be abelian, and returns
-the maximum over nonidentity gT in cyclic_generators of
+the minimum over all choices of one inertial multiplicity bound and one
+H^1_ur bound of the maximum over nonidentity gT in cyclic_generators of
 
-    (Inertial_Multiplicity_Bound(G/T)(gT)
-        + PD_H1ur_Bound_Vec(G,T,qT,cyclic_generators)(gT))
+    (inertial_bound(gT) + pd_bound(gT))
             / Pushforward_Discriminant_Exponents(G,T,qT,cyclic_generators)(gT).
 
 The identity element of G/T must be included in cyclic_generators, but is
@@ -116,12 +117,13 @@ RequireGeneratorsInParent:=procedure(cyclic_generators,Q)
     end for;
 end procedure;
 
+/* This is a placeholder function giving a true, but weak and non-optimized bound*/
 Inertial_Multiplicity_Bound:=function(B)
-    return function(b)
+    return [function(b)
         error if Parent(b) ne B, "Input must be a generator element of B";
 
         return 4.0 * Sqrt(#B) * (1 - 1/Order(b));
-    end function;
+    end function];
 end function;
 
 Pushforward_Discriminant_Exponents:=function(G,T,qT,cyclic_generators)
@@ -173,6 +175,7 @@ MinimalGModuleGenerators:=function(G,T)
     return d;
 end function;
 
+/* This is a placeholder function giving a true, but weak and non-optimized bound*/
 PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     error if not IsNormal(G,T), "T must be normal in G so that G/T is defined";
     error if not IsAbelian(T), "T must be abelian";
@@ -185,19 +188,21 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     Bprime,qB:=quo<G|Centralizer(G,T)>;
     generator_factor:=MinimalGModuleGenerators(G,T)/2;
 
-    return function(g)
+    return [function(g)
         error if Parent(g) ne Q, "Input must be an element of Codomain(qT)";
 
         lift:=g @@ qT;
         image_order:=Order(qB(lift));
 
         return 1.0 * generator_factor * #Bprime * (1 - 1/image_order);
-    end function;
+    end function];
 end function;
 
-Inductive_Theta_Bound:=function(G,T,qT,cyclic_generators)
+Inductive_Theta_Bound_From_Lists:=function(G,T,qT,cyclic_generators,inertial_bounds,pd_bounds)
     error if not IsNormal(G,T), "T must be normal in G so that G/T is defined";
     error if not IsAbelian(T), "T must be abelian";
+    error if #inertial_bounds eq 0, "Need at least one inertial multiplicity bound";
+    error if #pd_bounds eq 0, "Need at least one H1_ur bound";
 
     error if Domain(qT) ne G, "qT must have domain G";
     error if Kernel(qT) ne T, "qT must have kernel T";
@@ -208,16 +213,28 @@ Inductive_Theta_Bound:=function(G,T,qT,cyclic_generators)
     nonidentity_generators:=[gT : gT in cyclic_generators | gT ne Id(Q)];
     error if #nonidentity_generators eq 0, "Need at least one nonidentity cyclic generator";
 
-    inertial_bound:=Inertial_Multiplicity_Bound(Q);
-    pd_bound:=PD_H1ur_Bound_Vec(G,T,qT,cyclic_generators);
     pushforward_exponent:=Pushforward_Discriminant_Exponents(G,T,qT,cyclic_generators);
 
-    theta_values:=[];
-    for gT in nonidentity_generators do
-        exponent:=pushforward_exponent(gT);
-        error if exponent eq 0, "Pushforward discriminant exponent must be nonzero";
-        Append(~theta_values,(inertial_bound(gT) + pd_bound(gT))/exponent);
+    theta_values_by_choice:=[];
+    for inertial_bound in inertial_bounds do
+        for pd_bound in pd_bounds do
+            theta_values_for_choice:=[];
+            for gT in nonidentity_generators do
+                exponent:=pushforward_exponent(gT);
+                error if exponent eq 0, "Pushforward discriminant exponent must be nonzero";
+                Append(~theta_values_for_choice,(inertial_bound(gT) + pd_bound(gT))/exponent);
+            end for;
+            Append(~theta_values_by_choice,Maximum(theta_values_for_choice));
+        end for;
     end for;
 
-    return Maximum(theta_values);
+    return Minimum(theta_values_by_choice);
+end function;
+
+Inductive_Theta_Bound:=function(G,T,qT,cyclic_generators)
+    Q:=Codomain(qT);
+    inertial_bounds:=Inertial_Multiplicity_Bound(Q);
+    pd_bounds:=PD_H1ur_Bound_Vec(G,T,qT,cyclic_generators);
+
+    return Inductive_Theta_Bound_From_Lists(G,T,qT,cyclic_generators,inertial_bounds,pd_bounds);
 end function;
