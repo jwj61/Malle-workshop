@@ -17,7 +17,9 @@ Inertial_Multiplicity_Bound tests.
 */
 B:=CyclicGroup(6);
 cyclic_generators:=CyclicSubgroupGeneratorRepresentatives(B);
-F:=Inertial_Multiplicity_Bound(B);
+Flist:=Inertial_Multiplicity_Bound(B);
+assert #Flist eq 1;
+F:=Flist[1];
 assert_real_equal(value_for_generator_order(F,cyclic_generators,1), 0.0);
 assert_real_equal(value_for_generator_order(F,cyclic_generators,2), 2.0*Sqrt(6));
 assert_real_equal(value_for_generator_order(F,cyclic_generators,3), (8.0/3.0)*Sqrt(6));
@@ -25,7 +27,9 @@ assert_real_equal(value_for_generator_order(F,cyclic_generators,6), (10.0/3.0)*S
 
 B:=SymmetricGroup(3);
 cyclic_generators:=CyclicSubgroupGeneratorRepresentatives(B);
-F:=Inertial_Multiplicity_Bound(B);
+Flist:=Inertial_Multiplicity_Bound(B);
+assert #Flist eq 1;
+F:=Flist[1];
 assert #cyclic_generators eq 3;
 assert_real_equal(value_for_generator_order(F,cyclic_generators,1), 0.0);
 assert_real_equal(value_for_generator_order(F,cyclic_generators,2), 2.0*Sqrt(6));
@@ -90,6 +94,35 @@ Q,q,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
 theta:=Inductive_Theta_Bound(G,T,q,cyclic_generators);
 assert_real_equal(theta,2.0*Sqrt(6)+1.5);
 
+/*
+Adding dominated alternatives to the inertial and H1_ur lists should not change
+the min-over-choices theta value.
+*/
+base_inertial_bounds:=Inertial_Multiplicity_Bound(Q);
+base_pd_bounds:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+dominated_inertial_bounds:=base_inertial_bounds cat [
+    function(gT)
+        return base_inertial_bounds[1](gT)+1.0;
+    end function
+];
+dominated_pd_bounds:=base_pd_bounds cat [
+    function(gT)
+        return base_pd_bounds[1](gT)+1.0;
+    end function
+];
+theta_with_dominated:=Inductive_Theta_Bound_From_Lists(
+    G,T,q,cyclic_generators,dominated_inertial_bounds,dominated_pd_bounds
+);
+assert_real_equal(theta_with_dominated,theta);
+
+error_seen:=false;
+try
+    theta:=Inductive_Theta_Bound_From_Lists(G,T,q,cyclic_generators,[],base_pd_bounds);
+catch e
+    error_seen:=true;
+end try;
+assert error_seen;
+
 missing_identity_generators:=[gT : gT in cyclic_generators | gT ne Id(Q)];
 error_seen:=false;
 try
@@ -139,7 +172,9 @@ If G is abelian, then G/Centralizer_G(T) is trivial, so every value is zero.
 G:=CyclicGroup(4);
 T:=sub<G|G.1^2>;
 Q,q,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
-F:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+Flist:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+assert #Flist eq 1;
+F:=Flist[1];
 for g in cyclic_generators do
     assert Parent(g) eq Q;
     assert_real_equal(F(g), 0.0);
@@ -153,7 +188,9 @@ contributes (1/2)*2*(1-1/2)=1/2.
 G:=SymmetricGroup(3);
 T:=sub<G|(1,2,3)>;
 Q,q,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
-F:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+Flist:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+assert #Flist eq 1;
+F:=Flist[1];
 assert #cyclic_generators eq 2;
 assert_real_equal(value_for_generator_order(F,cyclic_generators,1), 0.0);
 assert_real_equal(value_for_generator_order(F,cyclic_generators,2), 0.5);
@@ -167,7 +204,9 @@ and (1/2)*6*(1-1/3)=2.
 G:=SymmetricGroup(4);
 T:=sub<G|(1,2)(3,4),(1,3)(2,4)>;
 Q,q,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
-F:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+Flist:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+assert #Flist eq 1;
+F:=Flist[1];
 assert #cyclic_generators eq 3;
 assert_real_equal(value_for_generator_order(F,cyclic_generators,1), 0.0);
 assert_real_equal(value_for_generator_order(F,cyclic_generators,2), 1.5);
@@ -181,7 +220,9 @@ nontrivial class of G/T=C2 still contributes 2*(1-1/2)=1.
 G:=PermutationGroup<6 | (1,2,3), (4,5,6), (2,3)(5,6)>;
 T:=sub<G|(1,2,3),(4,5,6)>;
 Q,q,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
-F:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+Flist:=PD_H1ur_Bound_Vec(G,T,q,cyclic_generators);
+assert #Flist eq 1;
+F:=Flist[1];
 assert #cyclic_generators eq 2;
 assert MinimalGModuleGenerators(G,T) eq 2;
 assert_real_equal(value_for_generator_order(F,cyclic_generators,1), 0.0);
