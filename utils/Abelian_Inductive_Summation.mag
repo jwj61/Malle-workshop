@@ -201,6 +201,8 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     Bprime,qB:=quo<G|Centralizer(G,T)>;
     generator_factor:=MinimalGModuleGenerators(G,T)/2;
 
+    if &and[IsElementaryAbelian(SylowSubgroup(T,p)):p in PrimeFactors(#T)] then
+
     gens := [Identity(T)];
 
     Hsize := 0;
@@ -208,7 +210,6 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
 
     for p in PrimeFactors(#T) do
         Tp:=SylowSubgroup(T,p);
-        if IsElementaryAbelian(Tp) then
          TpM:=GModule(G,Tp);
          gensTp := [Tp.i : i in [1..Ngens(Tp)]];
          for S in Subgroups(Tp) do
@@ -224,8 +225,9 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
                  end if;
              end if;
          end for;
-       end if;
     end for;
+
+    end if;
 
     if found then
         gens cat:= [W.i : i in [1..Ngens(W)]];
