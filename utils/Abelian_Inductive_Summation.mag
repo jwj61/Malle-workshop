@@ -232,7 +232,7 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
         Q,q := quo<T | W>;
         e:= Exponent(Q);
 
-        error if not IsCyclic(QW), "T/W must be cyclic";
+        error if not IsCyclic(Q), "T/W must be cyclic";
         error if #Core(G,W) ne 1, "W must be core-free";
 
         HB := qT(H);
