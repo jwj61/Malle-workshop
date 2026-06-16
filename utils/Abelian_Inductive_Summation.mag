@@ -206,28 +206,72 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     Hsize := 0;
     found := false;
 
-    if &and[IsElementaryAbelian(SylowSubgroup(T,p)):p in PrimeFactors(#T)] then
+if &and[IsElementaryAbelian(SylowSubgroup(T,p)) : p in PrimeFactors(#T)] then
+
+    bestWps := [];
+    found_all := true;
 
     for p in PrimeFactors(#T) do
-        Tp:=SylowSubgroup(T,p);
-         TpM:=GModule(G,Tp);
-         gensTp := [Tp.i : i in [1..Ngens(Tp)]];
-         for S in Subgroups(Tp) do
-             Wnew := S`subgroup;  Qp,q := quo<Tp|Wnew>;
-             if #Qp eq p and #Core(G,Wnew) eq 1 then
-                 N := Normalizer(G,Wnew);
-                 Hnew := sub<N | [h : h in N | &and[(t^h)*t^-1 in Wnew : t in gensTp]]>;
-                 if #Hnew gt Hsize then
-                     found := true;
-                     Hsize := #Hnew;
-                     H := Hnew;
-                     W := Wnew;
-                 end if;
-             end if;
-         end for;
+        Tp := SylowSubgroup(T,p);
+        gensTp := [Tp.i : i in [1..Ngens(Tp)]];
+
+        bestHsize_p := 0;
+        found_p := false;
+
+        for S in Subgroups(Tp) do
+            Wnew := S`subgroup;
+            Qp,qWp := quo<Tp | Wnew>;
+
+            if #Qp eq p then
+                Nnew := Normalizer(G,Wnew);
+                Hnew := sub<Nnew | [
+                    h : h in Nnew |
+                    &and[(t^h)*t^-1 in Wnew : t in gensTp]
+                ]>;
+
+                if #Hnew gt bestHsize_p then
+                    found_p := true;
+                    bestHsize_p := #Hnew;
+                    bestWp := Wnew;
+                end if;
+            end if;
+        end for;
+
+        if found_p then
+            Append(~bestWps,bestWp);
+        else
+            found_all := false;
+        end if;
     end for;
 
+    if found_all then
+        gensW := [Identity(T)];
+
+        for Wp in bestWps do
+            gensW cat:= [Wp.i : i in [1..Ngens(Wp)]];
+        end for;
+
+        W := sub<T | gensW>;
+
+        if #Core(G,W) eq 1 then
+            QW,qW := quo<T | W>;
+
+            if IsCyclic(QW) then
+                N := Normalizer(G,W);
+                gensT := [T.i : i in [1..Ngens(T)]];
+
+                H := sub<N | [
+                    h : h in N |
+                    &and[(t^h)*t^-1 in W : t in gensT]
+                ]>;
+
+                found := true;
+                Hsize := #H;
+            end if;
+        end if;
     end if;
+
+end if;
 
     if found then
         gens cat:= [W.i : i in [1..Ngens(W)]];
