@@ -274,8 +274,6 @@ if &and[IsElementaryAbelian(SylowSubgroup(T,p)) : p in PrimeFactors(#T)] then
 end if;
 
     if found then
-        gens cat:= [W.i : i in [1..Ngens(W)]];
-        W := sub<T | gens>;
         QW,q := quo<T | W>;
         e:= Exponent(QW);
 
