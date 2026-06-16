@@ -201,12 +201,12 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     Bprime,qB:=quo<G|Centralizer(G,T)>;
     generator_factor:=MinimalGModuleGenerators(G,T)/2;
 
-    if &and[IsElementaryAbelian(SylowSubgroup(T,p)):p in PrimeFactors(#T)] then
-
     gens := [Identity(T)];
 
     Hsize := 0;
     found := false;
+
+    if &and[IsElementaryAbelian(SylowSubgroup(T,p)):p in PrimeFactors(#T)] then
 
     for p in PrimeFactors(#T) do
         Tp:=SylowSubgroup(T,p);
