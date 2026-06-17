@@ -132,6 +132,8 @@ while QQ`passnum eq rp do
 						catch e
 							print "Had an issue with group ",n,d," and T of order ",#T, " ", e;
 						end try;
+					else 
+						Database[index]`hasabelianT:=false;
 					end if;
 				end for;
 		end if;
