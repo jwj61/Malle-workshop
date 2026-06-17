@@ -6,7 +6,7 @@
 	It also seeds the array with basic information about the group, including preliminary bounds.
 */
 
-GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt, reason:Tup >;
+GroupCountingInfo := recformat< degree:RngIntElt, label:RngIntElt, order:RngIntElt, malleindex:RngIntElt, bound:FldReElt, conjecture:BoolElt, isnilpotent:BoolElt, issolvable:BoolElt, isconcentrated:BoolElt, reason:Tup, hasabelianT:=BoolElt >;
 
 backrefs:=AssociativeArray();
 backref_degrees:=AssociativeArray();
@@ -20,7 +20,7 @@ end for;
 InitializeDatabase := function()       
     Database := [];
              
-    Append(~Database, rec< GroupCountingInfo | degree:=1, label:=1, order:=1, malleindex:=0, bound:=0.0, conjecture:=true, isnilpotent:=true, issolvable:=true, isconcentrated:=false, reason:=<>>);
+    Append(~Database, rec< GroupCountingInfo | degree:=1, label:=1, order:=1, malleindex:=0, bound:=0.0, conjecture:=true, isnilpotent:=true, issolvable:=true, isconcentrated:=false, reason:=<>, hasabelianT:=false>);
 
     numgroups:=#grouplist;
     count:=0;
