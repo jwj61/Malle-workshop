@@ -59,6 +59,15 @@ while QQ`passnum eq rp do
 		nTd:=TransitiveGroup(n,d);
 		a:=G_rec`malleindex;
 
+		Database[index]`hasabelianT := false;
+
+		for T_rec in NormalSubgroups(nTd) do
+		    T := T_rec`subgroup;
+		    if IsAbelian(T) and #T ne 1 then
+		        Database[index]`hasabelianT := true;
+		        break;
+		    end if;
+		end for;
 
 		/*
 			If we do not already know weak Malle, we update any upper bounds by comparing with other permutation
@@ -132,8 +141,6 @@ while QQ`passnum eq rp do
 						catch e
 							print "Had an issue with group ",n,d," and T of order ",#T, " ", e;
 						end try;
-					else 
-						Database[index]`hasabelianT:=false;
 					end if;
 				end for;
 		end if;
