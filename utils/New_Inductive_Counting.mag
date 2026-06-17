@@ -116,6 +116,7 @@ while QQ`passnum eq rp do
 				for T_rec in NormalSubgroups(nTd) do
 					T:=T_rec`subgroup;
 					if (Database[index]`conjecture eq false) and IsAbelian(T) and #T ne 1 then
+						Database[index]`hasabelianT:=true;
 						try
 							Q,qT,cyclic_generators:=QuotientCyclicSubgroupGeneratorRepresentatives(nTd,T);
 							theta:=Inductive_Theta_Bound(nTd,T,qT,cyclic_generators);
