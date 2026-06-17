@@ -109,6 +109,7 @@ while QQ`passnum eq rp do
 			for T_rec in NormalSubgroups(nTd) do
 				T:=T_rec`subgroup;
 				if (Database[index]`conjecture eq false) and IsAbelian(T) and #T ne 1 then
+					Database[index]`hasabelianT:=true;
 					// Check if T is an imprimitive kernel.
 					
 					try					
