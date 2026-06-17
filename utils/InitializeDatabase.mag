@@ -33,7 +33,6 @@ InitializeDatabase := function()
         n := group[1];
         t := group[2];
         G := TransitiveGroup(n, t);
-		G_rec`hasabelianT := false;
 
 			// Seed with basic info about G
 			G_rec := rec< GroupCountingInfo | degree:=n, label:=t, malleindex:=MinIndex(G), order:=#G, reason:=<>>;
