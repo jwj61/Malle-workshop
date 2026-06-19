@@ -184,12 +184,24 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     error if Kernel(qT) ne T, "qT must have kernel T";
 
     //We can always, to begin with, focus on the hypercenter, see Cor 1.14(i)
-    //HZG:=Hypercenter(G);
-    //GquoHZG,qHZ:=quo<G|HZG>;
-    //G:=GquoHZG;
-    //T:=qHZ(T);
+    HZG := Hypercenter(G);
+    K := HZG meet T;
 
-    //Q,qT,gens:=QuotientCyclicSubgroupGeneratorRepresentatives(G,T);
+    if #K gt 1 then
+        Gbar, qK := quo<G | K>;
+        Tbar := qK(T);
+        Qbar, qTbar := quo<Gbar | Tbar>;
+    
+        pdbar := PD_H1ur_Bound_Vec(
+            Gbar, Tbar, qTbar, CyclicSubgroupGeneratorRepresentatives(Qbar)
+        )[1];
+    
+        return [function(g)
+            error if Parent(g) ne Q, "Input must be an element of Codomain(qT)";
+            lift := g @@ qT;
+            return pdbar(qTbar(qK(lift)));
+        end function];
+    end if;
 
     Q:=Codomain(qT);
     RequireGeneratorsInParent(cyclic_generators,Q);
