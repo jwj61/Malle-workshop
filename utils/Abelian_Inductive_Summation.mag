@@ -183,6 +183,9 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
     error if Domain(qT) ne G, "qT must have domain G";
     error if Kernel(qT) ne T, "qT must have kernel T";
 
+    Q:=Codomain(qT);
+    RequireGeneratorsInParent(cyclic_generators,Q);
+
     //We can always, to begin with, focus on the hypercenter, see Cor 1.14(i)
     HZG := Hypercenter(G);
     K := HZG meet T;
@@ -200,9 +203,6 @@ PD_H1ur_Bound_Vec:=function(G,T,qT,cyclic_generators)
             return pdbar(qTbar(qK(lift)));
         end function];
     end if;
-
-    Q:=Codomain(qT);
-    RequireGeneratorsInParent(cyclic_generators,Q);
 
     //Here we search for a W in T such that T/W is cyclic and Core(W)=1. 
     //We choose the W which gives us the largest group H, then our bound will be disc(F^H)^(1/2+eps)
